@@ -20,11 +20,14 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
+        working-directory: app/api
         run: |
-          pip install -r app/api/requirements.txt pytest
+          pip install -r requirements.txt pytest
 
       - name: Run tests
         working-directory: app/api
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shopsphere"
         run: python3 -m pytest -v
 
   deploy:
