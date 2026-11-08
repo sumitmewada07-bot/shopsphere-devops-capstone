@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ../../app/api
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL=postgresql://dbadmin:SUMIT262718@shopsphere-postgres.cz0kk06mkdmm.ap-south-1.rds.amazonaws.com:5432/shopsphere
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: shopsphere
+      POSTGRES_PASSWORD: localpass
+      POSTGRES_DB: shopsphere
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopsphere -d shopsphere"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:

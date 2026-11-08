@@ -1,0 +1,24 @@
+---
+- name: Configure ShopSphere web server
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install NGINX
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Start and enable NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Deploy the home page
+      ansible.builtin.copy:
+        content: "ShopSphere server configured by Ansible\n"
+        dest: /usr/share/nginx/html/index.html
+        owner: root
+        group: root
+        mode: "0644"
