@@ -1,0 +1,92 @@
+name: ShopSphere CI-CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r app/api/requirements.txt pytest
+
+      - name: Run tests
+        working-directory: app/api
+        run: python3 -m pytest -v
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: shopsphere-api
+      ECS_CLUSTER: shopsphere-cluster
+      ECS_SERVICE: shopsphere-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+
+      - name: Build and push image
+        id: image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: shopsphere-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" ./app/api
+          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "uri=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Update task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition shopsphere-api \
+            --query taskDefinition > task-definition.json
+
+          python -c "import json; p='task-definition.json'; d=json.load(open(p)); d.pop('taskDefinitionArn',None); d.pop('revision',None); d.pop('status',None); d.pop('requiresAttributes',None); d.pop('compatibilities',None); d.pop('registeredAt',None); d.pop('registeredBy',None); d.pop('deregisteredAt',None); [c.update(image='${{ steps.image.outputs.uri }}') for c in d['containerDefinitions'] if c['name']=='api']; json.dump(d,open(p,'w'))"
+
+      - name: Register new task definition
+        id: taskdef
+        run: |
+          TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "arn=$TASK_ARN" >> $GITHUB_OUTPUT
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --service "${{ env.ECS_SERVICE }}" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}"
+
+          aws ecs wait services-stable \
+            --cluster "${{ env.ECS_CLUSTER }}" \
+            --services "${{ env.ECS_SERVICE }}"
