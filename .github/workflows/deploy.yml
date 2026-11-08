@@ -20,15 +20,15 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        working-directory: app/api
         run: |
-          pip install -r requirements.txt pytest
+          pip install -r app/api/requirements.txt pytest
 
       - name: Run tests
-        working-directory: app/api
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shopsphere"
-        run: python3 -m pytest -v
+        run: |
+          cd app/api
+          python3 -m pytest -v
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
