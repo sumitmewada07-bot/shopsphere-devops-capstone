@@ -29,8 +29,8 @@ jobs:
         run: |
           cd app/api
           python3 -m pytest -v
-
-  deploy:
+          
+deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-latest
