@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<github-username>/shopsphere-devops-capstone.git
+    repoURL: https://github.com/sumitmewada07-bot/shopsphere-devops-capstone.git
     targetRevision: main
     path: k8s
   destination:
