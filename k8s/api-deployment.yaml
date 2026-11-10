@@ -4,7 +4,7 @@ metadata:
   name: shopsphere-api
   namespace: shopsphere
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: shopsphere-api
