@@ -1,22 +1,43 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 import psycopg
+from prometheus_client import Counter, generate_latest
 
 app = Flask(__name__)
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-@app.get("/api/health")
+# Prometheus Request Counter
+REQUEST_COUNT = Counter(
+    "shopsphere_requests_total",
+    "Number of ShopSphere requests"
+)
+
+@app.before_request
+def before_request():
+    REQUEST_COUNT.inc()
+
+@app.get("/metrics")
+def metrics():
+    return Response(
+        generate_latest(),
+        mimetype="text/plain; version=0.0.4"
+    )
+
+@app.route("/health", methods=["GET"])
+@app.route("/api/health", methods=["GET"])
 def health():
     return jsonify(status="ok"), 200
 
-@app.get("/api/products")
+@app.route("/products", methods=["GET"])
+@app.route("/api/products", methods=["GET"])
 def products():
     return jsonify([
         {"id": 1, "name": "Laptop", "price": 55000},
         {"id": 2, "name": "Headphones", "price": 2500}
     ])
 
-@app.post("/api/orders")
+@app.route("/orders", methods=["POST"])
+@app.route("/api/orders", methods=["POST"])
 def create_order():
     data = request.get_json(silent=True) or {}
     product_id = data.get("product_id")
