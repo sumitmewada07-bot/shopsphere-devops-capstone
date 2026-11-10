@@ -5,11 +5,10 @@ services:
     ports:
       - "5000:5000"
     environment:
-      DATABASE_URL=postgresql://dbadmin:SUMIT262718@shopsphere-postgres.cz0kk06mkdmm.ap-south-1.rds.amazonaws.com:5432/shopsphere
+      DATABASE_URL: postgresql://shopsphere:localpass@db:5432/shopsphere
     depends_on:
       db:
         condition: service_healthy
-
   db:
     image: postgres:16
     environment:
@@ -23,6 +22,5 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-
 volumes:
   postgres_data:

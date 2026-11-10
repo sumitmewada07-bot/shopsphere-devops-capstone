@@ -3,20 +3,20 @@ from flask import Flask, jsonify, request
 import psycopg
 
 app = Flask(__name__)
-DATABASE_URL = os.environ["DATABASE_URL"]
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     return jsonify(status="ok"), 200
 
-@app.get("/products")
+@app.get("/api/products")
 def products():
     return jsonify([
         {"id": 1, "name": "Laptop", "price": 55000},
         {"id": 2, "name": "Headphones", "price": 2500}
     ])
 
-@app.post("/orders")
+@app.post("/api/orders")
 def create_order():
     data = request.get_json(silent=True) or {}
     product_id = data.get("product_id")
