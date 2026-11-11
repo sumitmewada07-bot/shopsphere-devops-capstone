@@ -1,0 +1,56 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "563675986691.dkr.ecr.ap-south-1.amazonaws.com/shopsphere-api:v4",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://dbadmin:SUMIT262718@shopsphere-postgres.cz0kk06mkdmm.ap-south-1.rds.amazonaws.com:5432/shopsphere"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health')\" || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "systemControls": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/shopsphere/ecs/api",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "api",
+          "awslogs-create-group": "true"
+        }
+      }
+    }
+  ],
+  "family": "shopsphere-api",
+  "taskRoleArn": "arn:aws:iam::563675986691:role/shopsphere-execution-role",
+  "executionRoleArn": "arn:aws:iam::563675986691:role/shopsphere-execution-role",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "placementConstraints": [],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512"
+}
